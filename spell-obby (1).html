@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spell Obby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: loud, bouncy, game-show — a kid's Roblox obby, not a worksheet.
+   IDEA: an obby course; every word is a platform your blocky avatar hops across.
+   PICTURE: sky + studded baseplate, chunky block stages, live jump track during play.
+   COLOUR and TYPE: sky blue ground, Roblox play-green, coin gold accent; Lilita One + Nunito.
+   LAYOUT: header bar, world cards with zigzag stage blocks; play = track, timer, word card. */
+:root{color-scheme:light dark;
+--sky1:light-dark(#4fc3ff,#0b1a3f);--sky2:light-dark(#c9f1ff,#25346e);
+--panel:light-dark(#ffffff,#1b2342);--panel2:light-dark(#f2f6fb,#26305a);
+--ink:light-dark(#141824,#f4f6ff);--mute:light-dark(#566078,#aab4d6);
+--line:#0b0e17;--go:#00b06f;--go2:#00804f;--blue:#1e88ff;--blue2:#0b5fcc;--gold:#ffc72c;--red:#ff4757}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;min-height:100vh;color:var(--ink);font:17px/1.5 Nunito,system-ui,sans-serif;font-weight:800;overflow-x:clip;
+background:linear-gradient(var(--sky1),var(--sky2) 70%) fixed}
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:46px;z-index:-1;
+background:radial-gradient(circle at 50% 40%,#5fd16a 0 5px,transparent 6px) 0 0/22px 22px,linear-gradient(#3fb24a,#2a8f35);border-top:4px solid #1f6b28}
+.cloud{position:fixed;z-index:-1;background:#fff;opacity:.75;height:34px;border-radius:4px;box-shadow:30px -18px 0 #fff,62px 0 0 #fff}
+h1,h2,h3,.lil{font-family:"Lilita One",Nunito,sans-serif;font-weight:400;letter-spacing:.3px;line-height:1.05;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{min-height:44px;padding:8px 16px;border:3px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 5px 0 var(--line);font-weight:900;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--line)}
+.btn:focus-visible,input:focus-visible{outline:4px solid var(--gold);outline-offset:2px}
+.btn.go{background:var(--go);color:#fff}.btn.blue{background:var(--blue);color:#fff}.btn.gold{background:var(--gold);color:#141824}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn svg{width:20px;height:20px;vertical-align:-4px;margin-right:6px}
+/* header */
+.top{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px max(4vw,12px);background:rgba(11,14,23,.88);color:#fff;border-bottom:4px solid #000}
+.logo{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo h1{font-size:28px;color:#fff;text-shadow:3px 3px 0 #000}
+.logo h1 span{color:var(--gold)}
+.mini{width:38px;height:52px}
+.pill{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:#232a40;border:2px solid #000;white-space:nowrap}
+.pill svg{width:20px;height:20px}
+.top .btn.gold{background:var(--gold);color:#141824}
+#cloud{font-size:13px}#cloud.on{background:#0d5c3b}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px}
+.pcardx{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;border:4px solid var(--line);border-radius:16px;background:var(--panel2);box-shadow:0 6px 0 var(--line);text-align:center}
+.pcardx.cur{background:#fff4cc;color:#3d2f00}
+.pcardx .av{width:70px;height:100px}
+.pcardx h3{font-size:26px}
+.pcardx .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.addf{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.addf input{flex:1 1 200px;min-height:52px;padding:6px 14px;border:4px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--ink);font:22px "Lilita One"}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;margin:18px 0}
+.pod{display:flex;flex-direction:column;align-items:center;text-align:center}
+.pod .av{width:64px;height:92px}
+.pod .blockp{width:100%;display:grid;place-items:center;border:4px solid var(--line);border-radius:10px 10px 0 0;color:#fff;font:34px "Lilita One";text-shadow:2px 2px 0 #000}
+.lb{display:grid;gap:8px}
+.lbr{display:grid;grid-template-columns:40px 44px minmax(0,1fr) repeat(4,minmax(64px,auto));gap:10px;align-items:center;padding:8px 12px;border:3px solid var(--line);border-radius:12px;background:var(--panel2)}
+.lbr.head{background:none;border:0;color:var(--mute);font-size:13px;padding-block:0}
+.lbr .av{width:36px;height:52px}
+.lbr .n{font:22px "Lilita One";overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbr span:not(.n){text-align:right;font-variant-numeric:tabular-nums}
+.lbr.me{background:#fff4cc;color:#3d2f00}
+@media(max-width:600px){.lbr{grid-template-columns:30px 36px minmax(0,1fr) 54px 54px}.lbr .x{display:none}}
+.top .btn{min-height:40px;padding:4px 12px;background:#2b3352;color:#fff;border-color:#000;box-shadow:0 4px 0 #000}
+main{max-width:1100px;margin:0 auto;padding:18px max(4vw,12px) 90px}
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:18px;align-items:center;background:var(--panel);border:4px solid var(--line);border-radius:20px;box-shadow:0 8px 0 var(--line);padding:20px 24px;margin-bottom:26px}
+.hero h2{font-size:clamp(30px,5vw,46px)}
+.hero p{margin:8px 0 0;color:var(--mute)}
+.rank{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:8px;background:var(--gold);color:#141824;border:3px solid var(--line)}
+.stand{position:relative;height:190px}
+.stand .av{position:absolute;left:50%;bottom:34px;width:96px;height:140px;transform:translateX(-50%);animation:bob 1.6s ease-in-out infinite}
+.stand::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:34px;background:#3fb24a;border:4px solid var(--line);border-radius:6px;box-shadow:inset 0 -8px 0 #2a8f35}
+@keyframes bob{50%{transform:translate(-50%,-8px)}}
+/* worlds */
+.world{position:relative;margin-bottom:26px;border:4px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 8px 0 var(--line);background:var(--panel)}
+.whead{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:flex-end;padding:16px 20px 12px;background:var(--c);color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.45)}
+.whead h2{font-size:clamp(26px,4vw,36px)}
+.wsub{margin:0;font-size:14px;opacity:.95}
+.wprog{font-size:15px}
+.bar{height:12px;background:rgba(0,0,0,.25)}.bar i{display:block;height:100%;background:var(--gold)}
+.stages{display:flex;flex-wrap:wrap;gap:14px 16px;padding:22px 20px 26px;background:linear-gradient(var(--panel),var(--panel2))}
+.blk{position:relative;width:96px;min-height:92px;padding:8px 4px 6px;border:4px solid var(--line);border-radius:10px;background:var(--c);color:#fff;box-shadow:0 8px 0 var(--line),inset 0 -10px 0 rgba(0,0,0,.18),inset 0 6px 0 rgba(255,255,255,.3);text-shadow:2px 2px 0 rgba(0,0,0,.4);transition:transform .15s}
+.blk:nth-child(even){transform:translateY(14px)}
+.blk:not(.lock):hover{transform:translateY(-4px) rotate(-2deg)}
+.blk b{display:block;font:32px "Lilita One"}
+.blk small{display:block;font-size:12px}
+.blk .st{display:flex;justify-content:center;gap:1px;height:16px}.blk .st svg{width:16px;height:16px}
+.blk.lock{background:#8a93a8;cursor:not-allowed}
+.blk.done::after{content:"";position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;background:var(--go) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l5 5 9-10' fill='none' stroke='white' stroke-width='4'/%3E%3C/svg%3E") center/16px no-repeat;border:3px solid var(--line)}
+.world.locked .stages{filter:grayscale(.8);opacity:.6}
+.lockmsg{margin:0;padding:10px 20px 16px;color:var(--mute);background:var(--panel2)}
+.lockmsg svg{width:18px;height:18px;vertical-align:-3px}
+/* play */
+.phead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.pinfo{flex:1;display:flex;flex-direction:column}
+.pinfo span:first-child{font:26px "Lilita One";color:#fff;text-shadow:3px 3px 0 var(--line)}
+.pinfo span:last-child{color:#fff;text-shadow:2px 2px 0 var(--line)}
+.streak{padding:6px 14px;border-radius:12px;background:#ff7a1a;color:#fff;border:3px solid var(--line);box-shadow:0 4px 0 var(--line);white-space:nowrap}
+.track{position:relative;height:150px;margin-bottom:18px;border:4px solid var(--line);border-radius:18px;overflow:hidden;
+background:linear-gradient(transparent 70%,#ff5a1f 70%,#ffb21f),linear-gradient(#7fd6ff,#d9f6ff)}
+.track::before{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;background:repeating-linear-gradient(90deg,transparent 0 40px,rgba(255,240,120,.5) 40px 60px);animation:lava 3s linear infinite}
+@keyframes lava{to{background-position:100px 0}}
+.plat{position:absolute;bottom:26%;height:20px;width:calc(100%/var(--n) - 10px);border:3px solid var(--line);border-radius:4px;background:#9aa5bd;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
+.plat.ok{background:var(--go)}.plat.no{background:#c0392b}.plat.now{background:var(--gold)}
+.plat.goal{background:repeating-conic-gradient(#000 0 25%,#fff 0 50%) 0 0/10px 10px}
+.track .av{position:absolute;bottom:calc(26% + 17px);width:44px;height:64px;transition:left .45s cubic-bezier(.3,1.6,.6,1);z-index:2}
+.av.hop{animation:hop .45s}.av.fall{animation:fall 1s}
+@keyframes hop{40%{transform:translateY(-46px)}}
+@keyframes fall{30%{transform:translateY(-20px)}70%{transform:translateY(90px) rotate(40deg);opacity:0}71%{transform:translateY(-60px);opacity:0}100%{transform:none;opacity:1}}
+.pcard{position:relative;background:var(--panel);border:4px solid var(--line);border-radius:20px;box-shadow:0 8px 0 var(--line);padding:20px}
+.prow{display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;align-items:center}
+.ring{position:relative;width:120px;height:120px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:12}
+.rbg{stroke:var(--panel2)}.rfg{stroke:var(--go);stroke-linecap:round;stroke-dasharray:326.7;transition:stroke .3s}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font:40px "Lilita One"}
+.ring.warn .rfg{stroke:var(--red)}.ring.warn span{color:var(--red);animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.12)}}
+.tools{display:flex;flex-wrap:wrap;gap:10px}
+.tools .big{font-size:20px;padding:10px 22px}
+.defp{margin:16px 0 0;padding:12px 16px;background:var(--panel2);border-radius:12px;border:3px dashed var(--mute)}
+.tiles{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;min-height:0}
+.tl{display:grid;place-items:center;width:34px;height:42px;border:3px solid var(--line);border-radius:7px;background:var(--panel2);font:24px "Lilita One";text-transform:none}
+.tl.gap{border:0;background:none;width:14px}
+.tl.ok{background:#bff3d2;color:#0b5c2e}.tl.miss{background:var(--gold);color:#141824;transform:translateY(-4px)}
+.tl.bad{background:#ffd0d4;color:#a3101f;text-decoration:line-through}
+.tl.rev{background:#d4e8ff;color:#0b4fa8}
+.coach{display:flex;gap:12px;margin-top:16px;padding:12px 14px;border-radius:14px;background:#fff4cc;color:#3d2f00;border:3px solid var(--line)}
+.coach svg{flex:none;width:44px;height:44px}
+.coach b{display:block}
+form{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+#inp{flex:1 1 240px;min-height:60px;padding:8px 16px;border:4px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--ink);font:30px "Lilita One";letter-spacing:2px}
+#inp.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+form .btn{font-size:20px;padding:8px 26px}
+.fb{margin-top:16px}
+.fb h3{font-size:28px}
+.fb .lbl{margin:10px 0 4px;color:var(--mute);font-size:14px}
+.good{color:var(--go)}.oops{color:var(--red)}
+.pause{position:absolute;inset:0;z-index:5;display:grid;place-items:center;align-content:center;gap:14px;border-radius:16px;background:rgba(11,14,23,.92);color:#fff}
+/* results + shop */
+.panel{background:var(--panel);border:4px solid var(--line);border-radius:20px;box-shadow:0 8px 0 var(--line);padding:24px;margin-bottom:22px}
+.big{font-size:clamp(40px,8vw,72px)}
+.stars{display:flex;gap:8px;margin:12px 0}.stars svg{width:54px;height:54px}
+.acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.mlist{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:4px 12px;border:3px solid var(--line);border-radius:10px;background:var(--panel2)}
+.pats div{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:10px;align-items:center;margin:6px 0}
+.pats i{display:block;height:14px;border-radius:7px;background:#ff7a1a;border:2px solid var(--line)}
+.shopg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-top:14px}
+.item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px;border:4px solid var(--line);border-radius:14px;background:var(--panel2);box-shadow:0 5px 0 var(--line)}
+.item .av{width:70px;height:100px}
+.item.on{background:#c8f5da}
+.toast{position:fixed;left:50%;bottom:64px;z-index:50;transform:translateX(-50%);max-width:90vw;padding:12px 18px;border-radius:12px;background:#141824;color:#fff;border:3px solid #000}
+.cf{position:fixed;top:-20px;z-index:60;width:12px;height:12px;animation:drop 2.4s linear forwards;pointer-events:none}
+@keyframes drop{to{transform:translateY(110vh) rotate(720deg)}}
+[hidden]{display:none!important}
+@media(max-width:600px){
+.hero{grid-template-columns:1fr}.stand{height:150px}.stand .av{width:76px;height:110px}
+.prow{grid-template-columns:1fr;justify-items:center}.ring{width:96px;height:96px}.ring span{font-size:32px}
+.tools{justify-content:center}.blk{width:80px}.logo h1{font-size:22px}
+.tl{width:28px;height:36px;font-size:20px}.track{height:120px}.track .av{width:34px;height:50px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="cloud" style="top:120px;left:6%;width:70px"></div>
+<div class="cloud" style="top:260px;right:10%;width:90px"></div>
+<div class="cloud" style="top:480px;left:42%;width:60px"></div>
+
+<header class="top">
+  <div class="logo"><svg class="mini av" id="hav" viewBox="0 -18 60 108"></svg><h1>SPELL <span>OBBY</span></h1></div>
+  <div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffc72c" stroke="#000" stroke-width="2"/><text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="900" fill="#8a5a00">R</text></svg><span id="coins">0</span></div>
+  <div class="pill"><svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.4 4.7 1.7 7.2L12 17.8 5.7 21.5l1.7-7.2L2 9.6 9 9z" fill="#ffc72c" stroke="#000" stroke-width="1.5"/></svg><span id="starsTot">0</span></div>
+  <button class="btn" id="toMap">Map</button>
+  <button class="btn" id="toShop">Avatar shop</button>
+  <button class="btn" id="toGym">Tricky words</button>
+  <button class="btn" id="mute" aria-label="Sound effects">Sound: on</button>
+  <button class="btn gold" id="who">Players</button>
+  <button class="btn" id="toBoard">Leaderboard</button>
+  <span class="pill" id="cloud" title="Where progress is saved">Saving on this device</span>
+</header>
+
+<main>
+<section id="map"></section>
+
+<section id="play" hidden>
+  <div class="phead">
+    <button class="btn" id="quit">Leave</button>
+    <div class="pinfo"><span id="pname">Stage</span><span id="pcount"></span></div>
+    <div class="streak" id="streak">Streak 0</div>
+  </div>
+  <div class="track" id="track"></div>
+  <div class="pcard">
+    <div class="prow">
+      <div class="ring" id="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="rbg"/><circle cx="60" cy="60" r="52" class="rfg" id="rfg"/></svg><span id="tnum">30</span></div>
+      <div class="tools">
+        <button class="btn big blue" id="hear" type="button"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path d="M16 8a5 5 0 010 8M19 5a9 9 0 010 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Hear word</button>
+        <button class="btn" id="slow" type="button">Say it slowly</button>
+        <button class="btn" id="defb" type="button">Definition</button>
+        <button class="btn" id="hintb" type="button">Hint</button>
+        <button class="btn" id="pauseb" type="button">Pause</button>
+      </div>
+    </div>
+    <p id="defp" class="defp" hidden></p>
+    <div id="tiles" class="tiles"></div>
+    <div id="coach" class="coach" hidden></div>
+    <form id="f" autocomplete="off">
+      <input id="inp" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Type the word…" aria-label="Type the word">
+      <button class="btn go" id="sub">Spell it!</button>
+    </form>
+    <div id="fb" class="fb"></div>
+    <div class="pause" id="pauseo" hidden><h2 style="font-size:44px">Paused</h2><button class="btn go" id="resume" type="button">Keep going</button></div>
+  </div>
+</section>
+
+<section id="result" hidden></section>
+<section id="shop" hidden></section>
+<section id="players" hidden></section>
+<section id="board" hidden></section>
+</main>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const RAW=[
+`ran|moved fast on your feet (past of run)
+rod|a long, thin stick or bar
+shy|nervous or quiet around other people
+drink|to swallow a liquid
+mist|a thin cloud of tiny water drops near the ground
+still|not moving; or, even now
+pump|a machine that pushes air or water
+sharp|having an edge that can cut
+rich|having lots of money
+shoot|to fire at a target; also a new plant stem
+claws|sharp curved nails on an animal's feet
+winter|the coldest season of the year
+yellow|the color of a banana or the sun
+mouth|the part of your face you eat and talk with
+paper|thin sheets you write or draw on
+inside|in or into the inner part of something
+whale|a huge sea mammal that breathes air
+lizard|a small reptile with scales and a long tail
+nurse|a person who cares for sick people
+wind|moving air outside|wind
+good|nice, kind, or done well
+bunny|a young or small rabbit
+silly|funny and not serious
+stars|bright points of light in the night sky
+hello|a word used to greet someone
+shell|a hard outer covering, like a snail's
+easy|not hard to do
+shift|to move or change position; or a work period
+seal|a sea animal with flippers that barks
+crack|a thin break in something
+apple|a round fruit that is red, green, or yellow
+shine|to give off bright light
+spray|tiny drops of liquid shot through the air
+rabbit|a small furry animal with long ears that hops
+frozen|turned to ice; very cold
+market|a place where people buy and sell things
+beware|be careful of; watch out
+wrong|not correct
+leg|the body part you stand and walk on
+most|the greatest amount
+down|toward a lower place
+sick|not feeling well; ill
+truck|a large vehicle that carries heavy loads
+bush|a small, low plant with many branches
+yarn|thick thread used for knitting
+body|all of a person or animal
+heart|the organ that pumps blood
+even|flat and smooth; or numbers like 2, 4, 6
+come|to move toward someone or a place
+sound|something you hear
+chips|thin, crunchy slices of fried potato
+year|twelve months
+feed|to give food to
+speak|to say words; to talk
+flock|a group of birds or sheep
+sparkle|to shine with little flashes of light
+hopped|jumped with short, quick jumps (past)
+dirt|loose soil, or something unclean
+hurt|to cause pain; injured
+steps|stairs, or the movements of your feet when walking
+path|a narrow trail to walk on
+fire|heat and flames from burning
+late|after the expected time
+wings|body parts that birds use to fly
+house|a building where people live
+tusk|a long pointed tooth, like an elephant's
+dive|to jump headfirst into water
+fine|okay; or very thin
+mossy|covered with soft green moss
+beans|seeds from a pod that you can eat
+truth|what is true or real
+tallest|higher than all the others
+cliffs|high, steep rock faces
+crunch|a crushing, crackling sound when you bite
+sweater|a warm knitted top
+money|coins and bills used to buy things`,
+`cabin|a small simple house, often made of logs
+carve|to cut shapes into wood, stone, or food
+earth|the planet we live on; or soil
+half|one of two equal parts
+fear|the feeling of being scared
+illness|a sickness or disease
+riddle|a tricky question or puzzle
+knit|to make cloth by looping yarn with needles
+total|the whole amount after adding up
+finish|to come to the end
+spiders|eight-legged creatures that spin webs
+hospital|a place where sick people get treatment
+narrow|thin; not wide
+foolish|not wise; silly
+charming|very pleasing and delightful
+beasts|wild animals, especially big ones
+smoothly|in an easy, even way without bumps
+dangle|to hang loosely and swing
+frazzled|worn out and stressed
+darkness|having no light
+shadows|dark shapes made when something blocks light
+friend|a person you like and trust
+swift|very fast
+thirsty|needing something to drink
+lead|to go first and guide others|leed
+voice|the sound you make when you talk or sing
+cloak|a loose coat like a cape
+indoors|inside a building
+holiday|a special day of celebration or time off
+entire|whole; all of it
+mustard|a yellow, tangy sauce for hot dogs
+medium|in the middle; not big or small
+afraid|scared
+source|where something comes from
+shivering|shaking because you are cold or scared
+cottage|a small, cozy house
+distance|how far apart two things are
+bamboo|a tall, woody grass that pandas eat
+always|at all times; every time
+morning|the early part of the day
+lovely|beautiful or very nice
+grandfather|the father of your mom or dad
+peer|to look closely; or someone your own age
+groan|a low sound of pain or annoyance
+peach|a soft, fuzzy, sweet fruit
+parade|a group marching in a celebration
+trouble|problems or difficulty
+safety|being safe from harm
+library|a place full of books to borrow
+company|a business; or being with others
+pennies|one-cent coins
+remember|to keep in your mind; to not forget
+pearls|shiny round gems that grow inside oysters
+barge|a long flat boat for carrying goods
+humble|not proud or boastful
+breeze|a light, gentle wind
+sprout|a new young plant shoot
+alive|living; not dead
+return|to come or go back
+footprints|marks left by feet
+gentle|soft and kind
+sloth|a slow-moving animal that hangs in trees
+pancakes|flat round cakes cooked in a pan
+whistle|a high sound made by blowing
+relax|to rest and calm down
+stout|thick, strong, and sturdy
+guide|someone who shows the way
+ginger|a spicy root used in cooking
+hiking|taking long walks in nature
+result|what happens because of something
+tangy|having a sharp, zesty taste
+grumpily|in a cranky, bad-tempered way
+seventy|the number 70
+soared|flew high in the air (past)`,
+`buttons|small discs that fasten clothes
+clever|smart and quick to learn
+invite|to ask someone to come
+carefully|with close attention to avoid mistakes
+permit|to allow; or a written permission
+lunar|having to do with the moon
+woven|made by weaving threads together
+granola|a crunchy mix of oats, nuts, and honey
+lounge|to relax lazily; or a comfy room
+laughter|the sound of laughing
+duration|how long something lasts
+examine|to look at closely
+tissues|soft paper for wiping your nose
+compromise|an agreement where each side gives a little
+bifocals|glasses with two strengths in each lens
+geologist|a scientist who studies rocks and the Earth
+atmosphere|the layer of air around a planet
+helium|a light gas that makes balloons float
+annoyance|the feeling of being bothered
+cuddle|to hug lovingly
+basement|the floor of a building below the ground
+butterflies|insects with large, colorful wings
+sniffling|breathing in noisily through a runny nose
+awning|a cloth cover over a window or door
+boycotting|refusing to buy or use something as a protest
+proclaim|to announce publicly
+warrior|a brave fighter
+jovial|cheerful and friendly
+salary|money paid regularly for a job
+dictionary|a book of words and their meanings
+versus|against, as in team A against team B
+marlin|a big ocean fish with a long pointed bill
+incident|an event, often an unusual one
+cutlery|knives, forks, and spoons
+bellowed|shouted in a deep, loud voice
+disappointment|sadness when things don't go as hoped
+suggested|offered an idea
+interruption|something that stops what is going on
+puffy|swollen or fluffy
+burlap|rough cloth used for sacks
+kelp|a large brown seaweed
+beneath|under; below
+fickle|changing your mind often
+molten|melted by great heat, like lava
+thimble|a small cap that protects your finger when sewing
+rigid|stiff; not bending
+inferior|lower in quality
+disappear|to go out of sight
+business|a company, or work done to earn money
+lullaby|a soft song to help a baby sleep
+Halloween|the holiday on October 31 with costumes
+Japanese|from Japan, or its language
+chisel|a tool with a sharp edge for shaping wood or stone
+organism|any living thing
+truant|a student who skips school without permission
+chimpanzees|smart apes from Africa
+concentrate|to focus your attention
+tiptoed|walked quietly on your toes (past)
+wetlands|land soaked with water, like marshes
+property|things someone owns, or land
+tractor|a powerful farm vehicle
+relief|the good feeling when worry goes away
+elite|the very best of a group
+custody|care and control of someone or something
+fierce|wild and dangerous, or very intense
+December|the twelfth month of the year
+hurdler|a runner who jumps over barriers in a race
+reinstate|to put back in a former position
+opposite|completely different; or facing
+compliment|something nice said about someone
+investment|money put into something to earn more
+fundraiser|an event to collect money for a cause
+quail|a small, plump ground bird
+pamphlet|a thin booklet of information
+desperate|feeling hopeless and willing to try anything
+piñata/pinata|a decorated container full of candy that you break at parties|piñata`,
+`territory|an area of land that belongs to someone
+monorail|a train that runs on a single rail
+alphabetical|in the order of the alphabet, A to Z
+prejudice|an unfair opinion formed without knowing the facts
+cartridge|a small case holding ink, film, or ammunition
+fertilizer/fertiliser|stuff added to soil to help plants grow
+sorceress|a woman who practices magic
+singularity|being one of a kind; also the center of a black hole
+perimeter|the distance around the edge of a shape
+battalion|a large group of soldiers
+meticulous|very careful about small details
+megahertz|a unit of frequency: one million cycles per second
+insurrection|a violent uprising against a government
+fascism|a harsh political system ruled by a dictator
+reservoir|a lake used to store water
+carrion|dead and rotting animal flesh
+elliptical|shaped like an oval
+cemetery|a place where the dead are buried
+stragglers|people who fall behind the group
+exploratory|done to discover or investigate
+integrity|being honest and having strong morals
+solidarity|unity and support within a group
+segregation|separating people into groups, often unfairly
+apprentice|someone learning a trade from an expert
+glamorous|full of excitement and beauty
+fictitious|made up; not real
+collateral|something promised to a lender as security
+haddock|an ocean fish used for food
+precedent|an earlier example used as a guide
+cosmodrome|a site for launching spacecraft, especially in Russia
+regolith|loose dust and rock covering a planet's surface
+pheasants|large birds with long tails
+duende|a magical charm or spirit (from Spanish)|dwen day
+matrilineal|traced through the mother's side of the family
+glaucoma|an eye disease that can damage vision
+staccato|short, separated notes in music
+dachshund|a long dog with short legs; a wiener dog|dahks hoont
+albino|a person or animal born with no natural color in skin or hair
+indigo|a deep blue-purple color
+Oregon|a state in the northwestern U.S.
+calico|cotton cloth; or a cat with three colors
+tortillas|thin, flat round breads from Mexico
+synthetic|made by people, not by nature
+salamanders|small amphibians that look like lizards
+convertible|a car with a roof that folds down
+initiation|the start of something, or being welcomed into a group
+materialize/materialise|to appear or become real
+hypothermia|dangerously low body temperature
+arthritis|a disease that makes joints painful and stiff
+pentathletes|athletes who compete in five events
+predecessor|someone who held a job before you
+conscious|awake and aware
+piteously|in a way that makes you feel pity
+iridium|a hard, silvery metal element
+rendezvous|a planned meeting at a set time and place|ron day voo
+ridiculous|extremely silly
+bratwurst|a German pork sausage
+rebuttal|an argument showing another argument is wrong
+sputnik|the first space satellite, launched by the Soviet Union
+civilian|a person who is not in the military
+Caesar|the title of Roman emperors, like Julius
+suspension|hanging; a temporary removal; or a car's springs
+snarkiness|being sarcastic and a little rude
+mascara|makeup that darkens eyelashes
+magnesium|a light, silvery metal element
+optometrist|an eye doctor who checks your vision
+schnauzer|a German dog breed with a beard|shnow zer
+persnickety|very fussy about small details
+Senegal|a country in West Africa
+Polaroid|a camera that prints photos instantly
+arnica|a plant used to soothe bruises
+adrenaline|a hormone that gives you a burst of energy
+romerillo|a Cuban plant with small white flowers|roh meh ree yo
+Aeolus|the Greek god of the winds|ee oh lus`,
+`newt|a small salamander that lives on land and in water
+generosity|being willing to give and share
+wallowing|rolling around in mud or water; or indulging in a feeling
+mewling|crying weakly, like a kitten
+panoramic|showing a wide, complete view
+gauntlets|heavy protective gloves
+appetizing|looking good to eat
+prospective|likely to happen or become
+preconception|an idea formed before having the facts
+hemisphere|half of a sphere, like half of Earth
+reluctance|not wanting to do something
+propeller|spinning blades that move a plane or boat
+settee|a small sofa
+finesse|skill and grace
+curriculum|the subjects taught in a school
+enigmatic|mysterious and hard to understand
+hypothesis|an educated guess you can test
+thrummed|made a steady humming or strumming sound
+burnished|polished until shiny
+imperial|having to do with an empire or emperor
+generator|a machine that makes electricity
+Doberman|a large, sleek dog breed
+inanimate|not alive
+sentinels|guards who keep watch
+subscription|signing up to receive something regularly
+procession|people moving forward in a line, like a parade
+seminal|very important and influential
+consulate|an office of a foreign government in a city
+modish|fashionable; stylish|moe dish
+unconscious|not awake or aware
+foliage|the leaves of plants
+quizzically|in a puzzled, questioning way
+increments|small amounts added step by step
+reassurance|words that take away worry
+censers|containers for burning incense (sounds like sensors)
+embankment|a raised bank of earth or stone
+mortar|cement that holds bricks together; or a grinding bowl
+persistent|keeps going and doesn't give up
+dominion|the power to rule; or a territory
+lemmings|small arctic rodents
+frequency|how often something happens
+blithely|in a carefree, cheerful way
+tenuous|very weak or thin
+saxophone|a curved brass instrument with keys
+canter|a horse's easy, gentle gallop
+cuisine|a style of cooking
+influenza|the flu
+odorant/odourant|something that gives off a smell
+crocheted|made with yarn and a hooked needle (past)|crow shade
+apologetic|showing that you are sorry
+lapels|the folded-back parts on the front of a jacket
+unrelenting|never easing up
+arsonists|people who set fires on purpose to damage property
+authority|the power to make decisions
+decisively|firmly and without hesitation
+auditory|having to do with hearing
+self-sufficient|able to take care of yourself without help
+conspicuous|easy to notice; standing out
+perpendicular|meeting at a right angle
+torrential|pouring down very heavily
+sauntered|walked in a slow, relaxed way
+juniper|an evergreen shrub with blue berries
+palazzo|a grand Italian palace or building|puh lot so
+irrelevant|not related to the topic
+diplomatically|in a tactful, polite way
+calibrate|to adjust a tool so it measures correctly
+credenza|a low cabinet or sideboard`,
+`comprehensible|able to be understood
+trenchant|sharp and forceful in expression
+despondent|very sad and hopeless
+echolocation|finding things using echoes, like bats do
+conflagration|a huge, destructive fire
+thermotaxis|a living thing moving toward or away from heat
+inaugurate|to begin formally, or to swear into office
+bioluminescence|light made by living things, like fireflies
+chickadee|a small gray bird with a black cap
+asymmetric|not the same on both sides
+sharpei|a wrinkly-skinned Chinese dog breed|shar pay
+endothermy|making your own body heat, like warm-blooded animals
+éclair/eclair|a long pastry filled with cream and topped with chocolate|ay clair
+irascibility|getting angry easily
+a cappella|singing without musical instruments|ah kuh pell uh
+Amharic|the main language of Ethiopia
+Gloucester|a city in England, and one in Massachusetts|glosster
+prosciutto|thin-sliced Italian dried ham|pro shoo toe
+chitinous|made of chitin, the hard stuff in insect shells|kite in us
+Krio|an English-based language of Sierra Leone|kree oh
+Addis Ababa|the capital city of Ethiopia
+protectorate|a country controlled and protected by a stronger one
+pulmonary|having to do with the lungs
+approximation|a close estimate
+glycerin/glycerine|a sweet, thick, clear liquid used in soaps
+alabaster|a smooth white stone
+arugula|a peppery salad green
+vibrometer|a device that measures vibration
+mayonnaise|a creamy sauce made from eggs and oil
+sputum|mucus coughed up from the lungs
+cerulean|a deep sky-blue color
+cul-de-sac|a dead-end street with a circle at the end|cull duh sack
+electrolytes|minerals in your body that carry electric charges
+ototoxic|harmful to the ears or hearing|oh toe toxic
+Aphrodite|the Greek goddess of love and beauty
+bogong moth|an Australian moth that migrates to the mountains
+yakuza|organized crime groups in Japan
+sensilla|tiny sense organs on insects
+eponymous|named after a person, or giving its name to something
+Presbyterian|a member of a Protestant Christian church
+lactobacillus|helpful bacteria found in yogurt
+spes phthisica|a hopeful feeling sometimes seen in people with tuberculosis|spays tiz ih kuh
+Delaware|a small state on the U.S. East Coast
+undulating|moving in smooth waves
+phantasmal|ghostly or dreamlike
+brazier/brasier|a metal pan that holds burning coals
+arachnid|a creature with eight legs, like a spider
+pathologically|in an extreme, unhealthy way
+affinities|natural likings or connections
+embodiment|a perfect example of an idea
+porpoises|small toothed whales related to dolphins
+psychological|having to do with the mind
+assemblage|a collection of things or people
+leprosy|a disease that affects the skin and nerves
+eureka|a cry meaning I found it
+annelids|segmented worms, like earthworms
+kerosene/kerosine|an oil burned in lamps and jet engines
+Pennsylvania|a state in the northeastern U.S.
+ampulla|a small flask, or a widened part of a tube in the body
+solenodon|a venomous, shrew-like mammal from the Caribbean
+Sierra Leone|a country in West Africa
+Bildungsroman|a novel about a character growing up|bill doongs roh mahn
+vibrissae|whiskers|vy briss ee
+phenomenon|something amazing or observable that happens
+alleviate|to make pain or trouble less
+legation|a diplomatic office, smaller than an embassy
+diffidence|shyness; lack of confidence
+butane|a gas used as fuel in lighters
+cataract|a cloudy eye lens; or a large waterfall
+quiche|a savory egg pie|keesh
+euphemism|a gentler word used for something unpleasant
+acolyte|a helper or follower
+Tripoli|the capital city of Libya
+innocuous|harmless
+neurological|having to do with the nerves and brain
+mysticetes|baleen whales, like humpbacks|miss tuh see teez
+Eritrea|a country in East Africa
+forsythia|a shrub with bright yellow spring flowers
+salicylic acid|an acid used in acne and pain medicines
+stomatopods|mantis shrimp
+frankincense|a sweet-smelling tree resin burned as incense
+trichobothria|fine sensory hairs on spiders|try ko both ree uh
+Cappadocia|a region in Turkey famous for rock towers and hot-air balloons`];
+const THEMES=[
+ {name:'Grassy Spawn',sub:'One Bee · page 1',c:'#2fae4f'},
+ {name:'Candy Canyon',sub:'One Bee · page 2',c:'#ff4f9a'},
+ {name:'Lava Rush',sub:'Two Bee · page 1',c:'#ff6a13'},
+ {name:'Crystal Caves',sub:'Two Bee · page 2',c:'#12a5c4'},
+ {name:'Sky Islands',sub:'Three Bee · page 1',c:'#3b6cff'},
+ {name:'Galaxy Tower',sub:'Three Bee · page 2',c:'#2a2f6b'}];
+const W=RAW.map((txt,i)=>{
+ const words=txt.trim().split('\n').map(l=>{const [a,d,sy]=l.split('|');const alts=a.split('/').map(x=>x.trim());return {w:alts[0],alts,d:d.trim(),say:(sy||alts[0]).trim()}});
+ const n=words.length,k=Math.max(1,Math.floor(n/10)),base=Math.floor(n/k),ex=n%k,stages=[];let p=0;
+ for(let s=0;s<k;s++){const z=base+(s<ex?1:0);stages.push(words.slice(p,p+z));p+=z}
+ return {...THEMES[i],words,stages}});
+const ALL={};W.forEach(w=>w.words.forEach(o=>ALL[o.w]=o));
+
+/* ---------- save ---------- */
+const KEY='spellObby.v2';
+const newId=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const FRESH=name=>({name,coins:0,cleared:{},stars:{},ws:{},pat:{},owned:['hat:none','shirt:#1e88ff','face:smile'],hat:'none',shirt:'#1e88ff',face:'smile',tries:0,oks:0,bestStreak:0,updated:Date.now()});
+let PR={cur:null,list:{},mute:false};
+try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&x.list)PR=Object.assign(PR,x)}catch(e){}
+try{const old=JSON.parse(localStorage.getItem('spellObby.v1'));if(old&&!Object.keys(PR.list).length){const id=newId();PR.list[id]=Object.assign(FRESH('Player 1'),old,{name:'Player 1',updated:Date.now()});PR.cur=id;localStorage.removeItem('spellObby.v1')}}catch(e){}
+let S=PR.list[PR.cur]||null;
+const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(PR))}catch(e){}};
+const save=()=>{if(!S)return;S.updated=Date.now();saveLocal();queuePush(PR.cur)};
+/* ---------- cloud save (shared across devices) ---------- */
+let DB=null;const pushT={},busy={},again={};
+const starsOf=p=>Object.values(p.stars||{}).reduce((a,b)=>a+b,0);
+const masteredOf=p=>Object.values(p.ws||{}).filter(v=>v.ok>0&&v.last!==false).length;
+const setCloud=on=>{const c=$('#cloud');c.textContent=on?'Online save on':'Saving on this device';c.classList.toggle('on',!!on)};
+function queuePush(id){if(!DB)return;clearTimeout(pushT[id]);pushT[id]=setTimeout(()=>push(id),1200)}
+async function push(id){if(!DB)return;if(busy[id]){again[id]=true;return}const p=PR.list[id];if(!p)return;busy[id]=true;
+ try{await DB.collection('players').doc(id).set({name:p.name,json:JSON.stringify(p),stars:starsOf(p),cleared:Object.keys(p.cleared||{}).length,updated:p.updated||0});setCloud(true)}
+ catch(e){if(e&&e.code==='unavailable'){busy[id]=false;setTimeout(()=>push(id),1500+Math.random()*1000);return}setCloud(false)}
+ busy[id]=false;if(again[id]){again[id]=false;push(id)}}
+const FB={apiKey:"AIzaSyAd7inVvoLNN0v3QCdVC2_vPiL42NaI-pg",authDomain:"spellingbeejaven.firebaseapp.com",projectId:"spellingbeejaven",storageBucket:"spellingbeejaven.firebasestorage.app",messagingSenderId:"411896812869",appId:"1:411896812869:web:dbacc78e41122e0c511a2c"};
+async function firebaseDB(){
+ const B='https://www.gstatic.com/firebasejs/10.14.1/';
+ const [A,AU,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+ const app=A.initializeApp(FB);await AU.signInAnonymously(AU.getAuth(app));const st=F.getFirestore(app);
+ return {collection:name=>({
+  doc:id=>{const r=F.doc(st,name,id);return {set:d=>F.setDoc(r,d),delete:()=>F.deleteDoc(r)}},
+  onSnapshot:(next,err)=>F.onSnapshot(F.collection(st,name),s=>next({docs:s.docs.map(d=>({id:d.id,data:()=>d.data()})),metadata:s.metadata,docChanges:()=>s.docChanges().map(c=>({type:c.type,doc:{id:c.doc.id}}))}),err)})}}
+async function connectCloud(){
+ let db=null;
+ const waitN=window.parent!==window?50:5;for(let i=0;i<waitN&&!(window.claude&&window.claude.use);i++)await new Promise(r=>setTimeout(r,200));
+ if(window.claude&&window.claude.use){try{db=await window.claude.use('db')}catch(e){}}
+ else if(location.protocol.startsWith('http')){try{db=await firebaseDB()}catch(e){console.warn('Online save unavailable:',e);setCloud(false)}}
+ if(!db)return;DB=db;let first=true;
+ db.collection('players').onSnapshot(snap=>{
+  const seen=new Set();
+  snap.docs.forEach(d=>{seen.add(d.id);const b=d.data();let p;try{p=JSON.parse(b.json)}catch(e){return}if(!p||typeof p!=='object')return;
+   const loc=PR.list[d.id];if(loc&&(loc.updated||0)>=(p.updated||0))return;if(d.id===PR.cur&&P)return;
+   PR.list[d.id]=p;if(d.id===PR.cur)S=p});
+  if(!snap.metadata.fromCache){
+   if(first){first=false;Object.keys(PR.list).forEach(id=>{if(!seen.has(id)||(PR.list[id].updated||0)>((snap.docs.find(d=>d.id===id)||{data:()=>({})}).data().updated||0))push(id)})}
+   else snap.docChanges().forEach(c=>{if(c.type==='removed'&&!seen.has(c.doc.id)){delete PR.list[c.doc.id];if(PR.cur===c.doc.id){PR.cur=null;S=null}}});
+   setCloud(true)}
+  saveLocal();refresh()},()=>setCloud(false))}
+const worldOpen=w=>w===0||W[w-1].stages.every((_,s)=>S.cleared[(w-1)+'-'+s]);
+const stageOpen=(w,s)=>worldOpen(w)&&(s===0||!!S.cleared[w+'-'+(s-1)]);
+
+/* ---------- sound ---------- */
+let AC=null;
+const tone=(f,d=.12,type='square',v=.05,delay=0)=>{if(PR.mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}};
+const sfx={ok:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.15,'square',.05,i*.07)),bad:()=>{tone(200,.3,'sawtooth',.06);tone(130,.45,'sawtooth',.05,.15)},coin:()=>{tone(988,.08,'square',.04);tone(1319,.22,'square',.04,.08)},tick:()=>tone(1300,.05,'sine',.05),key:()=>tone(500+Math.random()*300,.03,'triangle',.02),win:()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.22,'square',.05,i*.11))};
+let voice=null;const hasTTS='speechSynthesis' in window;
+const pickVoice=()=>{const vs=speechSynthesis.getVoices();voice=vs.find(v=>/en[-_]US/i.test(v.lang)&&/Google|Samantha|Aria|Jenny|Natural|Ava/i.test(v.name))||vs.find(v=>/en[-_]US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null};
+if(hasTTS){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+const say=(text,rate=.85)=>{if(!hasTTS){toast('Read-aloud is not supported in this browser. Try Chrome, Edge or Safari.');return}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=rate;u.lang='en-US';if(voice)u.voice=voice;speechSynthesis.speak(u)}catch(e){}};
+
+/* ---------- avatar ---------- */
+const HATS={none:'',cap:'<rect x="16" y="2" width="28" height="9" rx="3" fill="#e53935" stroke="#000" stroke-width="1.5"/><rect x="38" y="8" width="15" height="4" rx="2" fill="#b71c1c"/>',
+tophat:'<rect x="12" y="7" width="36" height="5" fill="#222"/><rect x="19" y="-12" width="22" height="20" fill="#222"/><rect x="19" y="2" width="22" height="4" fill="#d32f2f"/>',
+wizard:'<path d="M13 11 L30 -17 L47 11Z" fill="#3949ab" stroke="#000" stroke-width="1.5"/><circle cx="29" cy="-3" r="2.2" fill="#ffeb3b"/><circle cx="35" cy="4" r="1.6" fill="#ffeb3b"/>',
+horns:'<path d="M18 10 L11 -5 L24 6Z M42 10 L49 -5 L36 6Z" fill="#c62828" stroke="#000" stroke-width="1.2"/>',
+crown:'<path d="M16 10 L16 -2 L23 5 L30 -6 L37 5 L44 -2 L44 10Z" fill="#ffc72c" stroke="#8a5a00" stroke-width="1.8"/><circle cx="30" cy="4" r="2" fill="#e53935"/>',
+halo:'<ellipse cx="30" cy="-4" rx="14" ry="4.5" fill="none" stroke="#ffd54f" stroke-width="3.5"/>'};
+const FACES={smile:'<rect x="22" y="16" width="4" height="5" fill="#000"/><rect x="34" y="16" width="4" height="5" fill="#000"/><path d="M23 25 Q30 30 37 25" stroke="#000" stroke-width="2" fill="none"/>',
+grin:'<rect x="22" y="15" width="4" height="5" fill="#000"/><rect x="34" y="15" width="4" height="5" fill="#000"/><path d="M22 23 H38 Q30 32 22 23Z" fill="#000"/>',
+wink:'<rect x="21" y="18" width="6" height="2" fill="#000"/><rect x="34" y="16" width="4" height="5" fill="#000"/><path d="M24 25 Q31 30 37 24" stroke="#000" stroke-width="2" fill="none"/>',
+cool:'<rect x="19" y="14" width="22" height="7" rx="2" fill="#111"/><rect x="21" y="15" width="6" height="2" fill="#5ad"/><path d="M24 26 Q30 29 36 26" stroke="#000" stroke-width="2" fill="none"/>'};
+const avatar=(o=S)=>`<rect x="4" y="32" width="10" height="26" rx="2" fill="#f5cd30" stroke="#000" stroke-width="1.5"/><rect x="46" y="32" width="10" height="26" rx="2" fill="#f5cd30" stroke="#000" stroke-width="1.5"/><rect x="16" y="60" width="13" height="28" fill="#30406b" stroke="#000" stroke-width="1.5"/><rect x="31" y="60" width="13" height="28" fill="#30406b" stroke="#000" stroke-width="1.5"/><rect x="14" y="31" width="32" height="30" rx="2" fill="${o.shirt}" stroke="#000" stroke-width="1.5"/><rect x="18" y="6" width="24" height="24" rx="4" fill="#f5cd30" stroke="#000" stroke-width="1.5"/>${FACES[o.face]||''}${HATS[o.hat]||''}`;
+const avSVG=(o,cls='av')=>`<svg class="${cls}" viewBox="0 -18 60 108">${avatar(o)}</svg>`;
+
+/* ---------- helpers ---------- */
+const STAR=on=>`<svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.4 4.7 1.7 7.2L12 17.8 5.7 21.5l1.7-7.2L2 9.6 9 9z" fill="${on?'#ffc72c':'rgba(0,0,0,.25)'}" stroke="#000" stroke-width="1.5"/></svg>`;
+const LOCK='<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2" fill="currentColor"/><path d="M8 10V7a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>';
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const norm=s=>s.toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g,' ').trim();
+const plain=s=>norm(s).normalize('NFD').replace(/[̀-ͯ]/g,'');
+const isRight=(t,o)=>o.alts.some(a=>norm(a)===norm(t)||plain(a)===plain(t));
+let toastT;const toast=m=>{let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3200)};
+const totalStars=()=>Object.values(S.stars).reduce((a,b)=>a+b,0);
+const rank=()=>{const s=totalStars();return s>=100?'Spelling Legend':s>=60?'Word Wizard':s>=30?'Bee Captain':s>=10?'Speller':'Rookie'};
+const hud=()=>{$('#mute').textContent='Sound: '+(PR.mute?'off':'on');$('#who').textContent=S?'Player: '+S.name:'Pick a player';if(!S){$('#coins').textContent='0';$('#starsTot').textContent='0';$('#hav').innerHTML=avatar(FRESH(''));$('#toGym').disabled=true;return}$('#coins').textContent=S.coins;$('#starsTot').textContent=totalStars();$('#hav').innerHTML=avatar();$('#toGym').disabled=!tricky().length};
+const tricky=()=>Object.keys(S.ws).filter(k=>S.ws[k].last===false&&ALL[k]);
+const confetti=()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cols=['#ffc72c','#00b06f','#1e88ff','#ff4f9a','#ff6a13','#fff'];for(let i=0;i<70;i++){const d=document.createElement('i');d.className='cf';d.style.left=Math.random()*100+'vw';d.style.background=cols[i%6];d.style.animationDelay=Math.random()*.6+'s';d.style.animationDuration=1.8+Math.random()*1.4+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),3800)}};
+
+/* ---------- mistake patterns ---------- */
+const PAT={
+ double:{n:'Double letters',tip:'Listen for a short vowel sound right before a consonant: that often means twin letters (hop → hopped, rab-bit, sum-mer). When you add -ed or -ing to a short word, double the last letter.',warn:'This word has twin letters somewhere. Count them!'},
+ ie:{n:'ie / ei mix-ups',tip:'"i before e, except after c" (piece, receive). Watch out for rule-breakers like their and weird.',warn:'This word has an ie or ei in it. Which comes first?'},
+ silent:{n:'Silent letters',tip:'Some letters hide: kn (knit), wr (wrong), gh (light), mb (thumb), a silent e at the end. Try saying it "spelling style" — k-nit — so you hear the hidden letter.',warn:'Watch for a sneaky silent letter in this one.'},
+ ending:{n:'Word endings',tip:'-tion is the most common ending; -sion often follows l, n, r or s. Use -able when the base is a whole word (comfort-able), -ible when it is not (vis-ible). -ance/-ence and -ant/-ent: link to a word you know (importance, important).',warn:'Think hard about the ending of this word.'},
+ sound:{n:'Same sound, different letters',tip:'The f sound can be ph (phantom), the k sound can be c, ck or ch (chorus), and s can be c (city). Greek science words love ph, ch and y.',warn:'One sound in this word is spelled a tricky way (ph? ch? c?).'},
+ vowel:{n:'Mystery vowels',tip:'In quiet syllables every vowel sounds like "uh". Trick: find a related word where that vowel is loud (compose → composition, define → definition).',warn:'This word has a quiet "uh" vowel. Say it slowly and stretch each part.'},
+ order:{n:'Letters switched',tip:'You had the right letters in the wrong order. Clap the syllables and type one chunk at a time.',warn:'Type it chunk by chunk so the letters stay in order.'},
+ letters:{n:'Missing or extra letters',tip:'Break long words into syllables and spell each chunk: ther-mo-tax-is. Check that every sound you hear has letters.',warn:'Long one! Say each syllable as you type it.'},
+ time:{n:'Ran out of time',tip:'Type your best guess early, then fix it. An empty answer is always wrong — a guess might be right!',warn:'Start typing as soon as you hear it.'}};
+const FEAT={double:c=>/([a-z])\1/.test(c),ie:c=>/ie|ei/.test(c),silent:c=>/kn|wr|gh|mb|gn|ps|rh|bt|mn|sc|wh|e$/.test(c),ending:c=>/(tion|sion|cian|able|ible|ance|ence|ant|ent|ary|ery|ory|ous|le|el|al|ly|ize|ise|er|or|ar)$/.test(c),sound:c=>/ph|ck|ch|qu|x|c|z/.test(c),vowel:c=>(c.match(/[aeiou]+/g)||[]).length>=3,order:c=>c.length>=5,letters:c=>c.length>=8,time:()=>true};
+const collapse=s=>s.replace(/(.)\1+/g,'$1');
+const phon=s=>collapse(s.replace(/ph/g,'f').replace(/ck/g,'k').replace(/ch/g,'k').replace(/qu/g,'kw').replace(/x/g,'ks').replace(/c(?=[eiy])/g,'s').replace(/c/g,'k').replace(/z/g,'s').replace(/dg/g,'j').replace(/wh/g,'w'));
+const ENDS=[['tion','sion','cian','shun','shon','sian'],['able','ible','abel','ibel'],['ance','ence','ense','ants'],['ant','ent'],['ary','ery','ory'],['ous','us','ius','ious','uous'],['le','el','al','il','ul'],['ly','ley','lee','ily'],['ize','ise'],['er','or','ar','ur']];
+function classify(t,c){
+ if(!t)return 'time';
+ if(collapse(t)===collapse(c))return 'double';
+ if(t.replace(/ie|ei/g,m=>m==='ie'?'ei':'ie')===c)return 'ie';
+ if(t.length===c.length-1){for(let i=0;i<c.length;i++)if(c.slice(0,i)+c.slice(i+1)===t){const x=c.slice(Math.max(0,i-1),i+2);if(/kn|wr|gh|mb|gn|ps|rh|bt|mn|sc|wh|gu|h/.test(x)||(c[i]==='e'&&i===c.length-1))return 'silent';break}}
+ for(const g of ENDS){const ce=g.find(e=>c.endsWith(e));if(ce){const te=g.find(e=>e!==ce&&t.endsWith(e));if(te&&collapse(t.slice(0,-te.length))===collapse(c.slice(0,-ce.length)))return 'ending'}}
+ if(phon(t)===phon(c))return 'sound';
+ if(t.replace(/[aeiouy]/g,'')===c.replace(/[aeiouy]/g,''))return 'vowel';
+ if(t.length===c.length&&[...t].sort().join('')===[...c].sort().join(''))return 'order';
+ return 'letters'}
+function chunkOf(t,c){let p=0;while(p<t.length&&p<c.length&&t[p]===c[p])p++;let s=0;while(s<t.length-p&&s<c.length-p&&t[t.length-1-s]===c[c.length-1-s])s++;return [Math.max(0,p-1),Math.min(c.length,c.length-s+1)]}
+function lcs(a,b){const n=a.length,m=b.length,D=Array.from({length:n+1},()=>new Array(m+1).fill(0));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)D[i][j]=a[i]===b[j]?D[i+1][j+1]+1:Math.max(D[i+1][j],D[i][j+1]);const ma=new Array(n).fill(false),mb=new Array(m).fill(false);let i=0,j=0;while(i<n&&j<m){if(a[i]===b[j]){ma[i]=mb[j]=true;i++;j++}else if(D[i+1][j]>=D[i][j+1])i++;else j++}return [ma,mb]}
+const tiles=(str,cls)=>[...str].map((ch,i)=>ch===' '?'<span class="tl gap"></span>':`<span class="tl ${typeof cls==='function'?cls(i):cls||''}">${esc(ch)}</span>`).join('');
+
+/* ---------- screens ---------- */
+const show=id=>{['map','play','result','shop','players','board'].forEach(x=>$('#'+x).hidden=x!==id);window.scrollTo(0,0)};
+function renderMap(){
+ const nextW=W.findIndex((w,i)=>worldOpen(i)&&!w.stages.every((_,s)=>S.cleared[i+'-'+s]));
+ $('#map').innerHTML=`<div class="hero"><div><h2>Hop the obby, ${esc(S.name)}!</h2><p>Hear the word, type it before the 30-second timer runs out. Get 90% right to unlock the next stage. Clear a whole world to open the next page of words.</p><span class="rank lil">${rank()}</span></div><div class="stand">${avSVG(S)}</div></div>`+
+ W.map((wd,w)=>{const open=worldOpen(w),done=wd.stages.filter((_,s)=>S.cleared[w+'-'+s]).length;
+ return `<article class="world ${open?'':'locked'}" id="w${w}" style="--c:${wd.c}"><div class="whead"><div><p class="wsub">World ${w+1} · ${wd.sub}</p><h2>${wd.name}</h2></div><div class="wprog">${done} / ${wd.stages.length} stages cleared${w===nextW?' · you are here':''}</div></div><div class="bar"><i style="width:${done/wd.stages.length*100}%"></i></div>
+ <div class="stages">${wd.stages.map((st,s)=>{const k=w+'-'+s,op=stageOpen(w,s);return `<button class="blk ${S.cleared[k]?'done':''} ${op?'':'lock'}" data-w="${w}" data-s="${s}" ${op?'':'disabled'} aria-label="Stage ${s+1}"><b>${op?s+1:LOCK.replace('<svg','<svg width="30" height="30"')}</b><span class="st">${[0,1,2].map(i=>STAR(i<(S.stars[k]||0))).join('')}</span><small>${st.length} words</small></button>`}).join('')}</div>
+ ${open?'':`<p class="lockmsg">${LOCK} Clear every stage of ${W[w-1].name} to unlock</p>`}</article>`}).join('');
+ hud()}
+
+/* ---------- play ---------- */
+let P=null;const inp=$('#inp');
+function startStage(w,s,gym){
+ const list=gym?shuffle(tricky().map(k=>ALL[k])).slice(0,10):shuffle(W[w].stages[s]);
+ if(!list.length)return;
+ P={w,s,gym,words:list,i:0,correct:0,streak:0,earned:0,res:[],cats:{}};
+ $('#pname').textContent=gym?'Tricky Words Gym':`${W[w].name} · Stage ${s+1}`;
+ const n=list.length;$('#track').style.setProperty('--n',n+1);
+ $('#track').innerHTML=list.map((_,i)=>`<div class="plat" id="pl${i}" style="left:calc(${i}*100%/var(--n) + 5px)"></div>`).join('')+`<div class="plat goal" style="left:calc(${n}*100%/var(--n) + 5px)"></div><svg class="av" id="tav" viewBox="0 -18 60 108">${avatar()}</svg>`;
+ show('play');startWord()}
+const placeAv=()=>{$('#tav').style.left=`calc(${P.i+.5}*100%/${P.words.length+1} - 22px)`};
+function startWord(){
+ const o=P.words[P.i];P.phase='type';P.rev=new Set();P.hint=0;P.helped=false;P.paused=false;
+ $('#pcount').textContent=`Word ${P.i+1} of ${P.words.length} · ${P.correct} correct · need ${Math.ceil(P.words.length*.9)} to pass`;
+ $('#streak').textContent='Streak '+P.streak;
+ document.querySelectorAll('.plat.now').forEach(e=>e.classList.remove('now'));$('#pl'+P.i).classList.add('now');placeAv();
+ $('#defp').hidden=true;$('#fb').innerHTML='';$('#tiles').innerHTML='';inp.value='';inp.placeholder='Type the word…';inp.disabled=false;$('#sub').textContent='Spell it!';
+ ['hintb','defb','slow','hear'].forEach(id=>$('#'+id).disabled=false);
+ coach(o);
+ setTimeout(()=>{say(o.say);inp.focus()},350);startTimer()}
+function coach(o){
+ const c=plain(o.w),st=S.ws[o.w],el=$('#coach');let html='';
+ if(st&&st.miss>=2&&st.ch){const [a,b]=st.ch;html=`<b>Coach: this word got you ${st.miss} times.</b>The tricky part is shown below — remember it!`;$('#tiles').innerHTML=tiles(o.w,i=>i>=a&&i<b?'rev':'');$('#tiles').querySelectorAll('.tl.rev').forEach(t=>{});$('#tiles').innerHTML=[...o.w].map((ch,i)=>ch===' '?'<span class="tl gap"></span>':`<span class="tl ${i>=a&&i<b?'rev':''}">${i>=a&&i<b?esc(ch):''}</span>`).join('')}
+ else if(st&&st.miss>=1){html=`<b>Coach: you missed this one before.</b>It has ${o.w.replace(/ /g,'').length} letters. Take your time.`}
+ else{const best=Object.keys(S.pat).filter(k=>S.pat[k]>=2&&FEAT[k](c)).sort((a,b)=>S.pat[b]-S.pat[a])[0];
+  if(best)html=`<b>Coach spotted a pattern: ${PAT[best].n} (${S.pat[best]} mistakes so far).</b>${PAT[best].warn}`}
+ el.hidden=!html;el.innerHTML=html?`<svg viewBox="0 -18 60 108">${avatar({shirt:'#ff6a13',face:'grin',hat:'cap'})}</svg><div>${html}</div>`:''}
+function startTimer(){clearInterval(P&&P.tm);P.tt=300;drawT();P.tm=setInterval(()=>{if(P.paused)return;P.tt--;drawT();if(P.tt<=50&&P.tt>0&&P.tt%10===0)sfx.tick();if(P.tt<=0){clearInterval(P.tm);judge(true)}},100)}
+function drawT(){const f=Math.max(0,P.tt)/300;$('#rfg').style.strokeDashoffset=326.7*(1-f);$('#tnum').textContent=Math.ceil(P.tt/10);$('#ring').classList.toggle('warn',P.tt<=50)}
+function judge(timeout){
+ if(P.phase!=='type')return;clearInterval(P.tm);
+ const o=P.words[P.i],raw=inp.value,ws=S.ws[o.w]||(S.ws[o.w]={miss:0,ok:0});
+ if(raw.trim()&&isRight(raw,o)){
+  P.phase='wait';P.correct++;P.streak++;ws.ok++;ws.last=true;S.tries=(S.tries||0)+1;S.oks=(S.oks||0)+1;S.bestStreak=Math.max(S.bestStreak||0,P.streak);
+  const gain=P.helped?3:10+Math.floor(P.tt/30)+Math.min(P.streak,5)*2;P.earned+=gain;S.coins+=gain;P.res.push({o,ok:true});
+  $('#pl'+P.i).classList.replace('now','ok');sfx.ok();setTimeout(sfx.coin,300);
+  const av=$('#tav');av.classList.remove('hop');void av.getBoundingClientRect();av.classList.add('hop');P.i++;if(P.i<P.words.length)placeAv();P.i--;
+  const praise=['Awesome!','Nailed it!','Spelling pro!','Perfect!','Too easy!','Let\'s go!'];
+  $('#fb').innerHTML=`<h3 class="good">${praise[Math.floor(Math.random()*praise.length)]} +${gain} coins</h3>${P.streak>=3?`<p>Streak of ${P.streak}! Bonus coins are stacking.</p>`:''}`;
+  inp.disabled=true;save();hud();setTimeout(next,1200);return}
+ P.phase='fix';P.streak=0;ws.miss++;ws.last=false;S.tries=(S.tries||0)+1;
+ const c=plain(o.w),t=plain(raw),cat=timeout&&!t?'time':classify(t,c);
+ S.pat[cat]=(S.pat[cat]||0)+1;P.cats[cat]=(P.cats[cat]||0)+1;if(t)ws.ch=chunkOf(t,c);
+ P.res.push({o,ok:false,typed:raw});
+ $('#pl'+P.i).classList.replace('now','no');sfx.bad();const av=$('#tav');av.classList.remove('fall');void av.getBoundingClientRect();av.classList.add('fall');
+ const [ma,mb]=lcs(t,c),repeat=S.pat[cat]>=3;
+ $('#tiles').innerHTML='';$('#coach').hidden=true;
+ $('#fb').innerHTML=`<h3 class="oops">${timeout&&!t?'Time\'s up!':'So close — you fell in the lava!'}</h3>
+ ${t?`<p class="lbl">You typed</p><div class="tiles">${tiles(raw.toLowerCase(),i=>ma[i]?'':'bad')}</div>`:''}
+ <p class="lbl">Correct spelling (yellow = the part to learn)</p><div class="tiles">${tiles(o.w,i=>!t||mb[i]?'ok':'miss')}</div>
+ <div class="coach"><svg viewBox="0 -18 60 108">${avatar({shirt:'#ff6a13',face:'grin',hat:'cap'})}</svg><div><b>${repeat?`Pattern spotted: ${PAT[cat].n} — that's ${S.pat[cat]} times now!`:'Coach tip: '+PAT[cat].n}</b>${PAT[cat].tip}</div></div>
+ <p class="lbl">Type it correctly once to lock it in your brain and keep going.</p>
+ <button class="btn" id="skip" type="button">Skip</button>`;
+ $('#skip').onclick=next;
+ inp.value='';inp.placeholder='Type '+o.w.replace(/./g,'•').slice(0,12)+' correctly';$('#sub').textContent='Lock it in';
+ $('#hintb').disabled=true;save();setTimeout(()=>{say(o.say,.7);inp.focus()},700)}
+function fix(){const o=P.words[P.i];if(isRight(inp.value,o)){sfx.coin();S.coins+=1;P.earned+=1;save();hud();next()}else{inp.classList.remove('shake');void inp.offsetWidth;inp.classList.add('shake');sfx.bad()}}
+function next(){if(!P)return;P.i++;if(P.i>=P.words.length)finish();else startWord()}
+function finish(){
+ clearInterval(P.tm);const n=P.words.length,need=Math.ceil(n*.9),pass=P.correct>=need,pct=Math.round(P.correct/n*100);
+ const stars=P.correct===n?3:pass?2:pct>=70?1:0,k=P.w+'-'+P.s;let bonus=0,first=false;
+ if(!P.gym){if(pass){first=!S.cleared[k];bonus=first?50:20;S.cleared[k]=true}S.stars[k]=Math.max(S.stars[k]||0,stars)}else bonus=P.correct*2;
+ S.coins+=bonus;save();hud();
+ const lastStage=!P.gym&&P.s===W[P.w].stages.length-1,worldDone=lastStage&&pass,nextW=P.w+1<W.length;
+ const missed=P.res.filter(r=>!r.ok),cats=Object.entries(P.cats).sort((a,b)=>b[1]-a[1]),gp=Object.entries(S.pat).sort((a,b)=>b[1]-a[1]).slice(0,4),gmax=gp.length?gp[0][1]:1;
+ $('#result').innerHTML=`<div class="panel"><p class="wsub" style="color:var(--mute)">${P.gym?'Tricky Words Gym':W[P.w].name+' · Stage '+(P.s+1)}</p>
+ <h2 class="big ${pass?'good':'oops'}">${pct}%</h2>
+ <div class="stars">${[0,1,2].map(i=>STAR(i<stars)).join('')}</div>
+ <h3 style="font-size:28px">${P.gym?`You fixed ${P.correct} tricky word${P.correct===1?'':'s'}!`:pass?(worldDone?(nextW?`World cleared! ${W[P.w+1].name} is unlocked!`:'You beat every world. Spelling Legend!'):'Stage cleared! Next stage unlocked.'):`${P.correct} of ${n} — you need ${need} to pass. Try again!`}</h3>
+ <p>Coins earned: ${P.earned+bonus}${bonus?` (includes ${bonus} ${first?'first-clear ':''}bonus)`:''}</p>
+ <div class="acts">${!P.gym&&pass&&!lastStage?`<button class="btn go" id="rNext">Next stage</button>`:''}${worldDone&&nextW?`<button class="btn go" id="rWorld">Go to ${W[P.w+1].name}</button>`:''}<button class="btn ${pass?'':'go'}" id="rRetry">${pass?'Play again':'Try again'}</button><button class="btn" id="rMap">Map</button>${tricky().length?`<button class="btn gold" id="rGym">Practice tricky words (${tricky().length})</button>`:''}</div></div>
+ ${missed.length?`<div class="panel"><h3 style="font-size:26px">Words to practice</h3><p style="color:var(--mute);margin:4px 0 0">Tap a word to hear it again.</p><div class="mlist">${missed.map(r=>`<button class="chip" data-say="${esc(r.o.say)}">${esc(r.o.w)}</button>`).join('')}</div>
+ ${cats.length?`<p style="margin:14px 0 0">This round, most mistakes were <b>${PAT[cats[0][0]].n.toLowerCase()}</b>. ${PAT[cats[0][0]].tip}</p>`:''}</div>`:''}
+ ${gp.length?`<div class="panel pats"><h3 style="font-size:26px">Your spelling patterns</h3><p style="color:var(--mute);margin:4px 0 8px">The coach tracks the kinds of mistakes you make and warns you before similar words.</p>${gp.map(([c,v])=>`<div><span>${PAT[c].n}<i style="width:${v/gmax*100}%"></i></span><b>${v}</b></div>`).join('')}</div>`:''}`;
+ show('result');if(pass){sfx.win();confetti()}
+ const b=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+ const {w,s,gym}=P;
+ b('#rNext',()=>startStage(w,s+1));b('#rWorld',()=>{renderMap();show('map');setTimeout(()=>document.getElementById('w'+(w+1)).scrollIntoView({behavior:'smooth'}),50)});
+ b('#rRetry',()=>gym?startStage(0,0,true):startStage(w,s));b('#rMap',goMap);b('#rGym',()=>startStage(0,0,true));
+ document.querySelectorAll('[data-say]').forEach(e=>e.onclick=()=>say(e.dataset.say,.8));P=null}
+
+/* ---------- shop ---------- */
+const ITEMS=[['hat','none','No hat',0],['hat','cap','Red cap',40],['hat','tophat','Top hat',120],['hat','wizard','Wizard hat',220],['hat','horns','Horns',300],['hat','crown','Gold crown',500],['hat','halo','Halo',800],
+['shirt','#1e88ff','Blue shirt',0],['shirt','#e53935','Red shirt',30],['shirt','#00b06f','Green shirt',30],['shirt','#ff6a13','Orange shirt',50],['shirt','#ff4f9a','Pink shirt',60],['shirt','#222831','Black shirt',90],['shirt','#ffc72c','Gold shirt',200],
+['face','smile','Smile',0],['face','grin','Big grin',40],['face','wink','Wink',80],['face','cool','Cool shades',150]];
+function renderShop(){
+ $('#shop').innerHTML=`<div class="panel" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center"><div class="stand" style="width:170px">${avSVG(S)}</div><div><h2 style="font-size:40px">Avatar shop</h2><p style="color:var(--mute)">Earn coins by spelling words right. Fast answers and streaks earn bonus coins. You have <b>${S.coins}</b> coins.</p></div></div>`+
+ ['hat','shirt','face'].map(t=>`<div class="panel"><h3 style="font-size:26px">${t==='hat'?'Hats':t==='shirt'?'Shirts':'Faces'}</h3><div class="shopg">${ITEMS.filter(i=>i[0]===t).map(([ty,id,nm,pr])=>{const own=S.owned.includes(ty+':'+id),on=S[ty]===id;const prev=Object.assign({},S,{[ty]:id});
+ return `<div class="item ${on?'on':''}">${avSVG(prev)}<b>${nm}</b><button class="btn ${on?'':own?'blue':'gold'}" data-t="${ty}" data-id="${id}" data-p="${pr}" ${on?'disabled':''}>${on?'Wearing':own?'Wear':pr+' coins'}</button></div>`}).join('')}</div></div>`).join('');
+ $('#shop').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t,id=b.dataset.id,p=+b.dataset.p,key=t+':'+id;
+  if(!S.owned.includes(key)){if(S.coins<p){toast(`You need ${p-S.coins} more coins. Spell more words!`);sfx.bad();return}S.coins-=p;S.owned.push(key);sfx.coin()}
+  S[t]=id;save();hud();renderShop()})}
+
+/* ---------- events ---------- */
+const goMap=()=>{if(P){clearInterval(P.tm);P=null}if(hasTTS)speechSynthesis.cancel();if(!S){renderPlayers();return}renderMap();show('map')};
+$('#map').addEventListener('click',e=>{const b=e.target.closest('.blk');if(b&&!b.disabled)startStage(+b.dataset.w,+b.dataset.s)});
+$('#f').addEventListener('submit',e=>{e.preventDefault();if(!P)return;if(P.phase==='type')judge(false);else if(P.phase==='fix')fix()});
+inp.addEventListener('input',()=>sfx.key());
+$('#hear').onclick=()=>{if(P)say(P.words[P.i].say);inp.focus()};
+$('#slow').onclick=()=>{if(P)say(P.words[P.i].say,.5);inp.focus()};
+$('#defb').onclick=()=>{if(!P)return;const o=P.words[P.i];let d=o.d;o.alts.forEach(a=>d=d.replace(new RegExp(a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),'_____'));const p=$('#defp');p.hidden=false;p.innerHTML='<b>Definition:</b> '+esc(d);say(d,.95);inp.focus()};
+$('#hintb').onclick=()=>{if(!P||P.phase!=='type')return;const o=P.words[P.i],w=o.w;
+ if(P.hint===0){P.hint=1;toast(`${w.replace(/ /g,'').length} letters. Press Hint again to reveal a letter (fewer coins).`)}
+ else{const idx=[...w].map((c,i)=>i).filter(i=>w[i]!==' '&&!P.rev.has(i));if(idx.length<=Math.ceil(w.length/2)){toast('That is all the help for this word. You can do it!');return}P.rev.add(idx[0]);P.helped=true}
+ $('#coach').hidden=true;$('#tiles').innerHTML=[...w].map((c,i)=>c===' '?'<span class="tl gap"></span>':`<span class="tl ${P.rev.has(i)?'rev':''}">${P.rev.has(i)?esc(c):''}</span>`).join('');inp.focus()};
+$('#pauseb').onclick=()=>{if(!P||P.phase!=='type')return;P.paused=true;$('#pauseo').hidden=false;if(hasTTS)speechSynthesis.cancel()};
+$('#resume').onclick=()=>{P.paused=false;$('#pauseo').hidden=true;inp.focus()};
+$('#quit').onclick=goMap;$('#toMap').onclick=goMap;
+$('#toShop').onclick=()=>{if(P){clearInterval(P.tm);P=null}if(!S){renderPlayers();return}renderShop();show('shop')};
+$('#toGym').onclick=()=>{if(P)clearInterval(P.tm);startStage(0,0,true)};
+$('#mute').onclick=()=>{PR.mute=!PR.mute;saveLocal();hud()};
+/* ---------- players + leaderboard ---------- */
+const COLORS=['#ffc72c','#b8c2d6','#d98a4e'];
+function renderPlayers(){
+ const ids=Object.keys(PR.list).sort((a,b)=>(PR.list[a].name||'').localeCompare(PR.list[b].name||''));
+ $('#players').innerHTML=`<div class="panel"><h2 style="font-size:clamp(32px,5vw,44px)">Who's playing?</h2><p style="color:var(--mute);margin:6px 0 0">Each player has their own stages, stars, coins and avatar. Everyone competes on the leaderboard.</p>
+ ${ids.length?`<div class="pgrid">${ids.map(id=>{const p=PR.list[id];return `<div class="pcardx ${id===PR.cur?'cur':''}">${avSVG(p)}<h3>${esc(p.name||'Player')}</h3><div>${starsOf(p)} stars · ${Object.keys(p.cleared||{}).length} stages</div><div class="row"><button class="btn go" data-pick="${id}">${id===PR.cur?'Keep playing':'Play'}</button><button class="btn" data-del="${id}">Remove</button></div></div>`}).join('')}</div>`:'<p style="margin-top:14px">No players yet. Add the first one below!</p>'}
+ <form class="addf" id="addf"><input id="newName" maxlength="16" placeholder="New player's name" aria-label="New player's name" autocomplete="off"><button class="btn go">Add player</button></form></div>`;
+ show('players');
+ $('#addf').onsubmit=e=>{e.preventDefault();const n=$('#newName').value.trim().slice(0,16);if(!n){$('#newName').focus();return}
+  if(Object.values(PR.list).some(p=>(p.name||'').toLowerCase()===n.toLowerCase())){toast('That name is taken. Try another!');return}
+  const id=newId();PR.list[id]=FRESH(n);PR.cur=id;S=PR.list[id];saveLocal();push(id);sfx.coin();goMap()};
+ $('#players').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{PR.cur=b.dataset.pick;S=PR.list[PR.cur];saveLocal();sfx.coin();goMap()});
+ $('#players').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+  if(b.dataset.sure!=='1'){b.dataset.sure='1';b.textContent='Tap again to remove';b.style.background='var(--red)';b.style.color='#fff';return}
+  const id=b.dataset.del;delete PR.list[id];if(PR.cur===id){PR.cur=null;S=null}saveLocal();if(DB)DB.collection('players').doc(id).delete().catch(()=>{});renderPlayers();hud()})}
+function renderBoard(){
+ const rows=Object.entries(PR.list).map(([id,p])=>({id,p,st:starsOf(p),cl:Object.keys(p.cleared||{}).length,ma:masteredOf(p),acc:p.tries?Math.round(p.oks/p.tries*100):0,bs:p.bestStreak||0}))
+  .sort((a,b)=>b.st-a.st||b.cl-a.cl||b.ma-a.ma||b.acc-a.acc);
+ const pod=[1,0,2].map(i=>rows[i]?`<div class="pod">${avSVG(rows[i].p)}<b class="lil" style="font-size:20px">${esc(rows[i].p.name)}</b><span>${rows[i].st} stars</span><div class="blockp" style="height:${[110,80,60][i]}px;background:${COLORS[i]}">${i+1}</div></div>`:'<div></div>').join('');
+ $('#board').innerHTML=`<div class="panel"><h2 style="font-size:clamp(32px,5vw,44px)">Leaderboard</h2><p style="color:var(--mute);margin:6px 0 0">Ranked by stars, then stages cleared, then words mastered. Get 3 stars by spelling every word in a stage right.</p>
+ ${rows.length?`<div class="podium">${pod}</div>
+ <div class="lb"><div class="lbr head"><span style="text-align:left">#</span><span></span><span class="n" style="font:inherit">Player</span><span>Stars</span><span>Stages</span><span class="x">Words mastered</span><span class="x">Accuracy</span></div>
+ ${rows.map((r,i)=>`<div class="lbr ${r.id===PR.cur?'me':''}"><b class="lil" style="font-size:22px">${i+1}</b>${avSVG(r.p)}<span class="n">${esc(r.p.name)}</span><span>${r.st}</span><span>${r.cl}</span><span class="x">${r.ma}</span><span class="x">${r.acc}%</span></div>`).join('')}</div>`:'<p>No players yet.</p>'}
+ <div class="acts"><button class="btn go" id="bPlay">${S?'Back to the map':'Pick a player'}</button></div></div>`;
+ show('board');$('#bPlay').onclick=()=>S?goMap():renderPlayers()}
+function refresh(){hud();if(P)return;if(!$('#board').hidden)renderBoard();else if(!$('#players').hidden)renderPlayers();else if(!$('#map').hidden){if(S)renderMap();else renderPlayers()}else if(!$('#shop').hidden&&S)renderShop()}
+$('#who').onclick=()=>{if(P){clearInterval(P.tm);P=null}renderPlayers()};
+$('#toBoard').onclick=()=>{if(P){clearInterval(P.tm);P=null}renderBoard()};
+if(S){renderMap();show('map')}else{hud();renderPlayers()}
+connectCloud();
+}
+</script>
+</body>
+</html>
